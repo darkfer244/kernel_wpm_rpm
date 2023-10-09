@@ -1,5 +1,1 @@
-# Welcome to GitHub Desktop!
-
-This is your README. READMEs are where you can communicate what your project is and how to use it.
-
-Write your name on line 6, save it, and then head back to GitHub Desktop.
+Kernel Driver used for Reading and Writing to user-space memory from Kernel Mode. It uses MmCopyVirtualMemory to transfer the data UM<->KM. The driver allows remove himself from a PC while stays loaded (that's bypassing Win10 func to block deleting loaded drivers - PatchGuard safe!) For now this should be UD on almost every non-bootloaded ACs (that's for sure detected on FaceIT/ESEA - you have to use another method to transfer data and bootload your driver and probably not using any UM apps at all (do everything from Kernel instead))
