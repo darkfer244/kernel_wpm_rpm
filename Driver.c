@@ -18,7 +18,7 @@ UNICODE_STRING dev, dos;
 
 HANDLE pID;
   
-typedef struct _READ
+typedef struct _RPM
 {
 	ULONGLONG Address;
 	ULONGLONG Response;
@@ -26,7 +26,7 @@ typedef struct _READ
 
 } READ, *PREAD;
 
-typedef struct _WRITE
+typedef struct _WPM
 {
 	ULONGLONG Address;
 	ULONGLONG Value;
@@ -35,7 +35,7 @@ typedef struct _WRITE
 } WRITE, *PWRITE;
 
 
-typedef struct _WRITE_FLOAT
+typedef struct _WPM_FLOAT
 {
 	ULONGLONG Address;
 	float Value;
@@ -54,7 +54,7 @@ PsGetProcessSectionBaseAddress(
 	__in PEPROCESS Process
 );
 
-NTSTATUS Read(PEPROCESS Process, PVOID SourceAddress, PVOID TargetAddress, SIZE_T Size)
+NTSTATUS RPM(PEPROCESS Process, PVOID SourceAddress, PVOID TargetAddress, SIZE_T Size)
 {
 	PSIZE_T Bytes;
 	if (NT_SUCCESS(MmCopyVirtualMemory(Process, SourceAddress, PsGetCurrentProcess(),
@@ -64,7 +64,7 @@ NTSTATUS Read(PEPROCESS Process, PVOID SourceAddress, PVOID TargetAddress, SIZE_
 		return STATUS_ACCESS_DENIED;
 }
 
-NTSTATUS Write(PEPROCESS Process, PVOID SourceAddress, PVOID TargetAddress, SIZE_T Size)
+NTSTATUS WPM(PEPROCESS Process, PVOID SourceAddress, PVOID TargetAddress, SIZE_T Size)
 {
 	PSIZE_T Bytes;
 	if (NT_SUCCESS(MmCopyVirtualMemory(PsGetCurrentProcess(), SourceAddress, Process,
@@ -73,6 +73,43 @@ NTSTATUS Write(PEPROCESS Process, PVOID SourceAddress, PVOID TargetAddress, SIZE
 	else
 		return STATUS_ACCESS_DENIED;
 }
+
+NTSTATUS ReadFloat(PEPROCESS Process, PVOID SourceAddress, float *pFloatValue)
+{
+    PSIZE_T BytesRead;
+    float floatValue = 0.0f;
+
+    if (NT_SUCCESS(MmCopyVirtualMemory(Process, SourceAddress, PsGetCurrentProcess(),
+        &floatValue, sizeof(float), KernelMode, &BytesRead)))
+    {
+        *pFloatValue = floatValue;
+        return STATUS_SUCCESS;
+    }
+    else
+    {
+        return STATUS_ACCESS_DENIED;
+    }
+}
+
+else if (ControlCode == IO_READ_FLOAT)
+{
+    PWRITE_FLOAT ReadFloatInput = (PWRITE_FLOAT)Irp->AssociatedIrp.SystemBuffer;
+
+    PEPROCESS Process;
+
+    if (NT_SUCCESS(PsLookupProcessByProcessId((HANDLE)pID, &Process)))
+    {
+        float floatValue;
+        if (NT_SUCCESS(ReadFloat(Process, (PVOID)ReadFloatInput->Address, &floatValue)))
+        {
+            ReadFloatInput->Value = floatValue;
+        }
+    }
+
+    Status = STATUS_SUCCESS;
+    BytesIO = sizeof(WRITE_FLOAT);
+}
+
 
 
 NTSTATUS IoControl(PDEVICE_OBJECT DeviceObject, PIRP Irp)
